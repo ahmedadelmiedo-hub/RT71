@@ -28,12 +28,11 @@
     "watermark_opacity": 0.72
   },
   "voice": {
-    "engine": "habibi_tts",
+    "engine": "xtts_v2_noncommercial",
     "language": "ar",
     "reference_audio_secret": "VOICE_REFERENCE_B64",
     "reference_audio_filename": "reference.mp3",
-    "reference_transcript": "العطار بقالي تسعتاشر سنة في المباحث. بس اللي شفته في الشقة دي عمري ما شفته. ده لحظة الساعة واحدة ونص بعد نص الليل.",
-    "dialect": "EGY"
+    "usage_scope": "private_noncommercial_review"
   },
   "youtube": {
     "handle": "@AlMalaf71",

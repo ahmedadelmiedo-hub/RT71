@@ -52,6 +52,8 @@ jobs:
           ffprobe -v error .private/voice/reference.mp3
 
       - name: Generate reviewable episode artifact
+        env:
+          COQUI_TOS_AGREED: "1"
         run: |
           FLAGS=""
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then FLAGS="--dry-run"; fi

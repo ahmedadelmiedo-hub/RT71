@@ -150,24 +150,14 @@ def create_visual_track(scene_images: list[Path], target_seconds: int, fps: int,
     run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", str(output)])
 
 
-def synthesize_narration(script_path: Path, reference_audio: Path, output: Path, voice: dict) -> None:
-    """Generate narration from the owner-supplied reference with Habibi-TTS.
+def synthesize_narration(project_root: Path, script_path: Path, reference_audio: Path, output: Path, voice: dict) -> None:
+    """Generate private non-commercial narration from the owner's voice reference."""
+    if voice["engine"] != "xtts_v2_noncommercial":
+        raise ValueError(f"Unsupported private narration engine: {voice['engine']}")
+    sys.path.insert(0, str(project_root))
+    from core.voice_clone import synthesize
 
-    The profile carries the matching reference transcript and Egyptian dialect
-    ID.  No public default narrator or external API is used.
-    """
-    run([
-        "habibi-tts_infer-cli",
-        "--model", "Specialized",
-        "--dialect", str(voice["dialect"]),
-        "--ref_audio", str(reference_audio),
-        "--ref_text", str(voice["reference_transcript"]),
-        "--gen_file", str(script_path),
-        "--output_dir", str(output.parent),
-        "--output_file", output.name,
-        "--device", "cpu",
-        "--remove_silence",
-    ])
+    synthesize(script_path, reference_audio, output, language=voice["language"])
 
 
 def mux_video(visual_track: Path, narration: Path, target_seconds: int, output: Path) -> None:
@@ -196,6 +186,8 @@ def build_episode(project_root: Path, profile_path: Path, output_dir: Path, run_
         "youtube_publishing_enabled": False,
         "target_duration_seconds": profile["episode"]["target_duration_seconds"],
         "script_word_count": word_count(script),
+        "voice_engine": profile["voice"]["engine"],
+        "voice_usage_scope": profile["voice"]["usage_scope"],
         "scenes": scenes,
     }
     (episode_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -212,7 +204,7 @@ def build_episode(project_root: Path, profile_path: Path, output_dir: Path, run_
     create_visual_track(scene_images, profile["episode"]["target_duration_seconds"], profile["episode"]["fps"], visual_track)
     reference = project_root / ".private" / "voice" / profile["voice"]["reference_audio_filename"]
     narration = episode_dir / "narration.wav"
-    synthesize_narration(script_path, reference, narration, profile["voice"])
+    synthesize_narration(project_root, script_path, reference, narration, profile["voice"])
     mux_video(visual_track, narration, profile["episode"]["target_duration_seconds"], episode_dir / "final.mp4")
     return metadata
 
