@@ -33,18 +33,49 @@ def clean_arabic_script(text: str) -> str:
     return text.strip()
 
 
-def split_text(text: str, max_chars: int = 650) -> list[str]:
-    """Split narration at Arabic sentence boundaries for stable XTTS generation."""
+def _split_long_text(text: str, max_chars: int) -> list[str]:
+    """Hard-wrap text while retaining word boundaries whenever possible."""
+    parts: list[str] = []
+    current = ""
+    for word in text.split():
+        while len(word) > max_chars:
+            if current:
+                parts.append(current)
+                current = ""
+            parts.append(word[:max_chars])
+            word = word[max_chars:]
+        candidate = f"{current} {word}".strip()
+        if current and len(candidate) > max_chars:
+            parts.append(current)
+            current = word
+        else:
+            current = candidate
+    if current:
+        parts.append(current)
+    return parts
+
+
+def split_text(text: str, max_chars: int = 150) -> list[str]:
+    """Split Arabic narration into XTTS-safe, sentence-first chunks.
+
+    XTTS v2 enforces a 400-token ceiling. Arabic text can use substantially more
+    tokens per visible character than Latin text, so every generated chunk is
+    also hard-capped at 150 characters after sentence-aware splitting.
+    """
+    if max_chars < 20:
+        raise ValueError("max_chars must be at least 20")
+
     sentences = [part.strip() for part in re.split(r"(?<=[.!؟…])\s+|\n+", text) if part.strip()]
     chunks: list[str] = []
     current = ""
     for sentence in sentences:
-        candidate = f"{current} {sentence}".strip()
-        if current and len(candidate) > max_chars:
-            chunks.append(current)
-            current = sentence
-        else:
-            current = candidate
+        for part in _split_long_text(sentence, max_chars):
+            candidate = f"{current} {part}".strip()
+            if current and len(candidate) > max_chars:
+                chunks.append(current)
+                current = part
+            else:
+                current = candidate
     if current:
         chunks.append(current)
     return chunks

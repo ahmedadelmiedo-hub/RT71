@@ -6,6 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from PIL import Image
 
+from core.voice_clone import split_text
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = REPO_ROOT / "scripts" / "fictional_episode_pipeline.py"
@@ -54,6 +56,13 @@ class FictionalEpisodePipelineTests(unittest.TestCase):
             PIPELINE.create_scene_art(scenes[0], self.profile, artwork)
             with Image.open(artwork) as image:
                 self.assertEqual(image.size, (1280, 720))
+
+    def test_xtts_narration_chunks_are_hard_capped_for_arabic(self) -> None:
+        script, _ = PIPELINE.build_script(self.profile, PIPELINE.select_seed(self.run_at), self.run_at)
+        chunks = split_text(script)
+        self.assertGreater(len(chunks), 1)
+        self.assertTrue(all(len(chunk) <= 150 for chunk in chunks))
+        self.assertEqual(" ".join(chunks), " ".join(script.split()))
 
 
 if __name__ == "__main__":
