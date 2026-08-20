@@ -6,7 +6,7 @@ on:
       script_file:
         description: UTF-8 Arabic script path
         required: true
-        default: content/scripts/long/case-001-EP01.txt
+        default: content/tests/xtts-voice-check.txt
       output_name:
         description: Output file stem
         required: true
@@ -32,6 +32,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ffmpeg
           python -m pip install --upgrade pip
+          pip install --index-url https://download.pytorch.org/whl/cpu torch==2.5.1+cpu torchaudio==2.5.1+cpu
           pip install -r requirements-xtts.txt
 
       - name: Restore private voice reference
@@ -45,6 +46,8 @@ jobs:
           ffprobe -v error .private/voice/reference.wav
 
       - name: Generate narration in owner's voice
+        env:
+          COQUI_TOS_AGREED: "1"
         run: |
           python -m core.voice_clone \
             --script-file "${{ inputs.script_file }}" \
