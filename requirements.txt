@@ -3,3 +3,5 @@ TTS==0.22.0
 pydub>=0.25.1
 transformers==4.33.0
 Pillow>=10.0.0
+google-api-python-client>=2.140.0
+google-auth>=2.34.0

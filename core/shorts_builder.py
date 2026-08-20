@@ -27,6 +27,7 @@ def build_short(
         "-vf", f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}",
         "-map", "0:v", "-map", "1:a",
         "-t", str(max_duration),
+        "-shortest",
         "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
         "-c:a", "aac", "-b:a", "192k",
         str(output_path),

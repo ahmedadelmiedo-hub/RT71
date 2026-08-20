@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "channel_name": "الملف 71",
   "channel_handle": "AlMalaf71",
   "series_name": "الملف 71 | قضايا خيالية أصلية",
@@ -36,8 +36,21 @@
   },
   "youtube": {
     "handle": "@AlMalaf71",
-    "publishing_enabled": false,
-    "publish_mode": "manual_review_required"
+    "publishing_enabled": true,
+    "publish_mode": "public_with_final_confirmation",
+    "automatic_publish_enabled": false,
+    "desired_privacy_status": "public",
+    "category_id": "24",
+    "default_language": "ar",
+    "notify_subscribers": false,
+    "self_declared_made_for_kids": false,
+    "contains_synthetic_media": true
+  },
+  "shorts": {
+    "enabled": true,
+    "max_duration_seconds": 59,
+    "resolution": "1080x1920",
+    "related_video_link_method": "youtube_studio_after_long_upload"
   },
   "hashtags_pool": ["#الملف_71", "#قصة_خيالية", "#غموض", "#تحقيق_خيالي"]
 }

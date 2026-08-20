@@ -107,6 +107,75 @@ def word_count(text: str) -> int:
     return len([word for word in text.replace("\n", " ").split(" ") if word.strip()])
 
 
+def trim_title(value: str, max_characters: int = 100) -> str:
+    """Keep YouTube titles within the platform limit without cutting a word."""
+    if len(value) <= max_characters:
+        return value
+    return value[: max_characters - 1].rsplit(" ", 1)[0].rstrip() + "…"
+
+
+def build_short_hook(seed: dict) -> str:
+    """Create an unresolved, platform-safe hook that directs to the long episode."""
+    return (
+        f"رسالة بلا توقيع ظهرت في {seed['place']}، وحبرها لا يكشفه إلا الضوء الأزرق. "
+        f"داخل الملف 71، بدأ الخيط من {seed['evidence']}، لكنه انتهى إلى سؤال أخطر: من كتب الرسالة، ولماذا اختار أن يتركها الآن؟ "
+        "هذه مجرد البداية. شاهد الحلقة الكاملة على قناة الملف 71، وتذكر أن القصة خيالية أصلية بالكامل."
+    )
+
+
+def build_publish_package(profile: dict, seed: dict, episode_id: str, hook: str) -> dict:
+    """Build ready-to-upload metadata for one long video and its companion Short."""
+    youtube = profile["youtube"]
+    hashtags = profile["hashtags_pool"]
+    tags = [tag.lstrip("#") for tag in hashtags]
+    long_title = trim_title(f"لغز {seed['case']} | تفاصيل ملف 71 لا يجيب عنها أحد")
+    short_title = trim_title(f"رسالة بلا توقيع… ما السر داخل ملف 71؟ #Shorts")
+    fiction_notice = profile["content_policy"]["opening_disclaimer"]
+    long_description = (
+        f"{hook}\n\n"
+        f"{fiction_notice}\n\n"
+        "في هذه الحلقة من الملف 71 نتابع خيطًا غامضًا يتصاعد من دليل صغير إلى ملف لا يفتح كل أوراقه. "
+        "اكتب في التعليقات: هل كنت ستفتح آخر ورقة أم تتركها مغلقة؟\n\n"
+        f"تابع القناة: {youtube['handle']}\n\n"
+        f"{' '.join(hashtags)}"
+    )
+    short_description = (
+        f"{hook}\n\n"
+        "شاهد الحلقة الكاملة من الملف 71 هنا: {long_video_url}\n\n"
+        f"{fiction_notice}\n\n"
+        f"{' '.join(hashtags + ['#Shorts'])}"
+    )
+    return {
+        "episode_id": episode_id,
+        "publishing": {
+            "enabled": youtube["publishing_enabled"],
+            "mode": youtube["publish_mode"],
+            "automatic_publish_enabled": youtube["automatic_publish_enabled"],
+            "final_confirmation_required": True,
+        },
+        "long_video": {
+            "title": long_title,
+            "description": long_description,
+            "tags": tags,
+            "category_id": youtube["category_id"],
+            "default_language": youtube["default_language"],
+            "privacy_status": youtube["desired_privacy_status"],
+            "notify_subscribers": youtube["notify_subscribers"],
+            "self_declared_made_for_kids": youtube["self_declared_made_for_kids"],
+            "contains_synthetic_media": youtube["contains_synthetic_media"],
+        },
+        "short": {
+            "title": short_title,
+            "description_template": short_description,
+            "tags": tags + ["Shorts"],
+            "privacy_status": youtube["desired_privacy_status"],
+            "max_duration_seconds": profile["shorts"]["max_duration_seconds"],
+            "related_video_link_method": profile["shorts"]["related_video_link_method"],
+            "hook": hook,
+        },
+    }
+
+
 def create_scene_art(scene: dict, profile: dict, output_path: Path) -> None:
     accent = tuple(profile["visual_identity"]["accent_rgb"])
     background = tuple(profile["visual_identity"]["background_rgb"])
@@ -178,17 +247,24 @@ def build_episode(project_root: Path, profile_path: Path, output_dir: Path, run_
     episode_dir.mkdir(parents=True, exist_ok=True)
     script_path = episode_dir / "script.txt"
     script_path.write_text(script, encoding="utf-8")
+    short_hook = build_short_hook(seed)
+    publish_package = build_publish_package(profile, seed, episode_id, short_hook)
+    publish_package_path = episode_dir / "publish-package.json"
+    publish_package_path.write_text(json.dumps(publish_package, ensure_ascii=False, indent=2), encoding="utf-8")
     metadata = {
         "episode_id": episode_id,
         "title": f"{profile['channel_name']} | {seed['case']}",
         "channel_handle": profile["youtube"]["handle"],
         "fiction_only": True,
-        "youtube_publishing_enabled": False,
+        "youtube_publishing_enabled": profile["youtube"]["publishing_enabled"],
+        "youtube_publish_mode": profile["youtube"]["publish_mode"],
         "target_duration_seconds": profile["episode"]["target_duration_seconds"],
         "script_word_count": word_count(script),
         "voice_engine": profile["voice"]["engine"],
         "voice_usage_scope": profile["voice"]["usage_scope"],
         "scenes": scenes,
+        "short_hook": short_hook,
+        "publish_package": publish_package_path.name,
     }
     (episode_dir / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
     if dry_run:
@@ -206,6 +282,21 @@ def build_episode(project_root: Path, profile_path: Path, output_dir: Path, run_
     narration = episode_dir / "narration.wav"
     synthesize_narration(project_root, script_path, reference, narration, profile["voice"])
     mux_video(visual_track, narration, profile["episode"]["target_duration_seconds"], episode_dir / "final.mp4")
+    if profile["shorts"]["enabled"]:
+        hook_script = episode_dir / "short-hook.txt"
+        hook_script.write_text(short_hook, encoding="utf-8")
+        hook_audio = episode_dir / "short-hook.wav"
+        synthesize_narration(project_root, hook_script, reference, hook_audio, profile["voice"])
+        sys.path.insert(0, str(project_root))
+        from core.shorts_builder import build_short
+
+        build_short(
+            episode_dir / "visual-01.mp4",
+            hook_audio,
+            episode_dir / "short.mp4",
+            resolution=profile["shorts"]["resolution"],
+            max_duration=profile["shorts"]["max_duration_seconds"],
+        )
     return metadata
 
 

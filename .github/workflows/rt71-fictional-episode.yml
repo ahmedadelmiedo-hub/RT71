@@ -10,6 +10,11 @@ on:
         required: true
         default: false
         type: boolean
+      publish_to_youtube:
+        description: "رفع الحلقة والشورت إلى YouTube بالحالة العامة — يتطلب تأكيدًا صريحًا وبيانات OAuth"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -70,3 +75,25 @@ jobs:
           path: storage/autopilot/
           if-no-files-found: error
           retention-days: 14
+
+      - name: Restore YouTube OAuth credential
+        if: ${{ inputs.publish_to_youtube == true || (github.event_name == 'schedule' && vars.YOUTUBE_AUTOPUBLISH == 'true') }}
+        shell: bash
+        env:
+          YOUTUBE_OAUTH_B64: ${{ secrets.YOUTUBE_OAUTH_B64 }}
+        run: |
+          test -n "$YOUTUBE_OAUTH_B64" || (echo "Missing YOUTUBE_OAUTH_B64 secret" && exit 1)
+          mkdir -p .private/youtube
+          printf '%s' "$YOUTUBE_OAUTH_B64" | base64 --decode > .private/youtube/authorized_user.json
+
+      - name: Publish long video and companion Short
+        if: ${{ inputs.publish_to_youtube == true || (github.event_name == 'schedule' && vars.YOUTUBE_AUTOPUBLISH == 'true') }}
+        run: |
+          EPISODE_DIR="$(find storage/autopilot -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+          python scripts/youtube_publish.py \
+            --long-video "$EPISODE_DIR/final.mp4" \
+            --short-video "$EPISODE_DIR/short.mp4" \
+            --package "$EPISODE_DIR/publish-package.json" \
+            --credentials .private/youtube/authorized_user.json \
+            --result "$EPISODE_DIR/youtube-publication.json" \
+            --execute
