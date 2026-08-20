@@ -117,8 +117,8 @@ def trim_title(value: str, max_characters: int = 100) -> str:
 def build_short_hook(seed: dict) -> str:
     """Create an unresolved, platform-safe hook that directs to the long episode."""
     return (
-        f"رسالة بلا توقيع ظهرت في {seed['place']}، وحبرها لا يكشفه إلا الضوء الأزرق. "
-        f"داخل الملف 71، بدأ الخيط من {seed['evidence']}، لكنه انتهى إلى سؤال أخطر: من كتب الرسالة، ولماذا اختار أن يتركها الآن؟ "
+        f"في {seed['place']}، ظهر {seed['evidence']}. "
+        f"داخل لغز {seed['case']}، بدأ الخيط من تفصيلة صغيرة، لكنه انتهى إلى سؤال أخطر: من ترك الدليل، ولماذا اختار أن يظهر الآن؟ "
         "هذه مجرد البداية. شاهد الحلقة الكاملة على قناة الملف 71، وتذكر أن القصة خيالية أصلية بالكامل."
     )
 
@@ -129,7 +129,7 @@ def build_publish_package(profile: dict, seed: dict, episode_id: str, hook: str)
     hashtags = profile["hashtags_pool"]
     tags = [tag.lstrip("#") for tag in hashtags]
     long_title = trim_title(f"لغز {seed['case']} | تفاصيل ملف 71 لا يجيب عنها أحد")
-    short_title = trim_title(f"رسالة بلا توقيع… ما السر داخل ملف 71؟ #Shorts")
+    short_title = trim_title(f"ما سر {seed['case']}؟ | الملف 71 #Shorts")
     fiction_notice = profile["content_policy"]["opening_disclaimer"]
     long_description = (
         f"{hook}\n\n"

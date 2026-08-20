@@ -74,6 +74,8 @@ class FictionalEpisodePipelineTests(unittest.TestCase):
         self.assertLessEqual(len(package["long_video"]["title"]), 100)
         self.assertEqual(package["long_video"]["privacy_status"], "public")
         self.assertIn("{long_video_url}", package["short"]["description_template"])
+        self.assertIn(seed["case"], package["short"]["title"])
+        self.assertIn(seed["case"], package["short"]["hook"])
         self.assertIn("قصة خيالية", package["short"]["hook"])
 
     def test_short_builder_ends_when_hook_audio_ends(self) -> None:
