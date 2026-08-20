@@ -12,7 +12,7 @@ import json
 import random
 import subprocess
 import sys
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import fill
 
@@ -214,7 +214,7 @@ def main() -> int:
     parser.add_argument("--at", default=None, help="UTC ISO timestamp for reproducible tests")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    run_at = datetime.fromisoformat(args.at.replace("Z", "+00:00")) if args.at else datetime.now(UTC)
+    run_at = datetime.fromisoformat(args.at.replace("Z", "+00:00")) if args.at else datetime.now(timezone.utc)
     metadata = build_episode(args.project_root, args.profile, args.output_dir, run_at, args.dry_run)
     print(json.dumps(metadata, ensure_ascii=False))
     return 0
