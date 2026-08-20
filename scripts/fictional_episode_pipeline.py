@@ -150,13 +150,24 @@ def create_visual_track(scene_images: list[Path], target_seconds: int, fps: int,
     run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", str(output)])
 
 
-def synthesize_narration(project_root: Path, script_path: Path, reference_audio: Path, output: Path) -> None:
-    sys.path.insert(0, str(project_root))
-    from core.voice_clone import synthesize, convert_to_mp3
-    wav_output = output.with_suffix(".wav")
-    synthesize(script_path, reference_audio, wav_output, language="ar")
-    convert_to_mp3(wav_output, output)
-    wav_output.unlink(missing_ok=True)
+def synthesize_narration(script_path: Path, reference_audio: Path, output: Path, voice: dict) -> None:
+    """Generate narration from the owner-supplied reference with Habibi-TTS.
+
+    The profile carries the matching reference transcript and Egyptian dialect
+    ID.  No public default narrator or external API is used.
+    """
+    run([
+        "habibi-tts_infer-cli",
+        "--model", "Specialized",
+        "--dialect", str(voice["dialect"]),
+        "--ref_audio", str(reference_audio),
+        "--ref_text", str(voice["reference_transcript"]),
+        "--gen_file", str(script_path),
+        "--output_dir", str(output.parent),
+        "--output_file", output.name,
+        "--device", "cpu",
+        "--remove_silence",
+    ])
 
 
 def mux_video(visual_track: Path, narration: Path, target_seconds: int, output: Path) -> None:
@@ -200,8 +211,8 @@ def build_episode(project_root: Path, profile_path: Path, output_dir: Path, run_
     visual_track = episode_dir / "visual-track.mp4"
     create_visual_track(scene_images, profile["episode"]["target_duration_seconds"], profile["episode"]["fps"], visual_track)
     reference = project_root / ".private" / "voice" / profile["voice"]["reference_audio_filename"]
-    narration = episode_dir / "narration.mp3"
-    synthesize_narration(project_root, script_path, reference, narration)
+    narration = episode_dir / "narration.wav"
+    synthesize_narration(script_path, reference, narration, profile["voice"])
     mux_video(visual_track, narration, profile["episode"]["target_duration_seconds"], episode_dir / "final.mp4")
     return metadata
 

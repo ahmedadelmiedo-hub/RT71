@@ -26,6 +26,13 @@ class FictionalEpisodePipelineTests(unittest.TestCase):
         self.assertEqual(len(scenes), 6)
         self.assertGreaterEqual(PIPELINE.word_count(script), self.profile["episode"]["target_word_count"])
 
+    def test_voice_profile_requires_the_owner_reference_and_egyptian_dialect(self) -> None:
+        voice = self.profile["voice"]
+        self.assertEqual(voice["engine"], "habibi_tts")
+        self.assertEqual(voice["reference_audio_secret"], "VOICE_REFERENCE_B64")
+        self.assertEqual(voice["dialect"], "EGY")
+        self.assertTrue(voice["reference_transcript"].strip())
+
     def test_dry_run_writes_only_reviewable_text_artifacts(self) -> None:
         with TemporaryDirectory() as temporary:
             result = PIPELINE.build_episode(
