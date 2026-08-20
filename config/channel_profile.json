@@ -1,0 +1,42 @@
+{
+  "schema_version": 2,
+  "channel_name": "الملف 71",
+  "channel_handle": "AlMalaf71",
+  "series_name": "الملف 71 | قضايا خيالية أصلية",
+  "content_policy": {
+    "fiction_only": true,
+    "opening_disclaimer": "هذه القصة عمل خيالي أصلي. الشخصيات والأماكن والأحداث غير حقيقية.",
+    "prohibited_claims": [
+      "لا تُقدَّم القصة على أنها قضية حقيقية أو خبر أو تحقيق واقعي.",
+      "لا تُستخدم أسماء أشخاص حقيقيين أو اتهامات واقعية أو صور لأشخاص حقيقيين."
+    ],
+    "language": "ar",
+    "narration_style": "راوٍ مصري هادئ بإيقاع تحقيق متصاعد، من دون وصف صادم أو دموي."
+  },
+  "episode": {
+    "target_duration_seconds": 300,
+    "target_word_count": 550,
+    "scene_count": 6,
+    "cadence_hours": 4,
+    "canvas": "1280x720",
+    "fps": 24
+  },
+  "visual_identity": {
+    "accent_rgb": [142, 36, 36],
+    "background_rgb": [16, 19, 25],
+    "watermark_text": "AL MALAF 71",
+    "watermark_opacity": 0.72
+  },
+  "voice": {
+    "engine": "xtts_v2",
+    "language": "ar",
+    "reference_audio_secret": "VOICE_REFERENCE_B64",
+    "reference_audio_filename": "reference.mp3"
+  },
+  "youtube": {
+    "handle": "@AlMalaf71",
+    "publishing_enabled": false,
+    "publish_mode": "manual_review_required"
+  },
+  "hashtags_pool": ["#الملف_71", "#قصة_خيالية", "#غموض", "#تحقيق_خيالي"]
+}

@@ -1,0 +1,6 @@
+# Voice cloning (XTTS v2)
+TTS==0.22.0
+pydub>=0.25.1
+torch>=2.1.0
+torchaudio>=2.1.0
+Pillow>=10.0.0

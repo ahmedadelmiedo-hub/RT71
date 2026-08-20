@@ -1,0 +1,66 @@
+name: Teaser Builder (1h before main episode)
+
+on:
+  workflow_dispatch:
+    inputs:
+      hook_audio_path:
+        description: Whisper-toned hook narration (mp3/wav) for this episode
+        required: true
+      background_clip_path:
+        description: Short atmospheric Pexels clip, no dialogue
+        required: true
+      episode_id:
+        description: Episode identifier
+        required: true
+      studio_csv_path:
+        description: >
+          CSV exported from YouTube Studio > Audience > "When your viewers
+          are on YouTube" — used to pick the best-performing hour
+        required: true
+
+jobs:
+  build-and-report-slot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install FFmpeg and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build teaser clip
+        run: |
+          python -m core.teaser_builder \
+            --logo assets/branding/rawaat_original_transparent.png \
+            --hook-audio "${{ inputs.hook_audio_path }}" \
+            --background-clip "${{ inputs.background_clip_path }}" \
+            --config config/channel_profile.json \
+            --output "storage/autopilot/${{ inputs.episode_id }}-teaser.mp4"
+
+      - name: Compute best publish slot
+        run: |
+          python scripts/best_time.py \
+            --studio-csv "${{ inputs.studio_csv_path }}" \
+            --config config/channel_profile.json \
+            | tee storage/autopilot/${{ inputs.episode_id }}-slot.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.episode_id }}-teaser
+          path: |
+            storage/autopilot/${{ inputs.episode_id }}-teaser.mp4
+            storage/autopilot/${{ inputs.episode_id }}-slot.json
+          if-no-files-found: error
+          retention-days: 14

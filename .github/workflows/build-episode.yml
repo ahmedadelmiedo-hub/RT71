@@ -1,0 +1,47 @@
+name: Build Episode (Intro + Voice + Watermark)
+
+on:
+  workflow_dispatch:
+    inputs:
+      raw_episode_path:
+        description: Path to the raw episode video from the existing pipeline
+        required: true
+      episode_id:
+        description: Episode identifier, e.g. case-001-EP01
+        required: true
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Install FFmpeg and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Assemble branded episode
+        run: |
+          python -m core.video_assembler \
+            --raw-episode "${{ inputs.raw_episode_path }}" \
+            --config config/channel_profile.json \
+            --output "storage/autopilot/${{ inputs.episode_id }}-final.mp4"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.episode_id }}-final
+          path: storage/autopilot/${{ inputs.episode_id }}-final.mp4
+          if-no-files-found: error
+          retention-days: 14

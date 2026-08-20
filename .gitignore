@@ -1,0 +1,19 @@
+# Never commit private voice reference or generated media
+.private/
+storage/autopilot/*.mp4
+storage/autopilot/*.mp3
+storage/autopilot/*.wav
+!storage/autopilot/.gitkeep
+
+# Unpacked source used only while maintaining the archived starter pack.
+unpacked/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS/editor
+.DS_Store
+.vscode/
